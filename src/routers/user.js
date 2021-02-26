@@ -21,7 +21,10 @@ router.post('/users', async (req, res) => {
 
 router.post('/users/login', async (req, res) => {
     try {
-        const user = await User.findByCredentials(req.body.email, req.body.password)
+        const user = await User.findByCredentials(
+            req.body.email,
+            req.body.password
+        )
         const token = await user.generateAuthToken()
         res.send({ user, token })
     } catch (e) {
@@ -59,14 +62,16 @@ router.get('/users/me', auth, async (req, res) => {
 router.patch('/users/me', auth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['name', 'email', 'password', 'age']
-    const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
+    const isValidOperation = updates.every((update) =>
+        allowedUpdates.includes(update)
+    )
 
     if (!isValidOperation) {
         return res.status(400).send({ error: 'Invalid updates!' })
     }
 
     try {
-        updates.forEach((update) => req.user[update] = req.body[update])
+        updates.forEach((update) => (req.user[update] = req.body[update]))
         await req.user.save()
         res.send(req.user)
     } catch (e) {
@@ -86,7 +91,7 @@ router.delete('/users/me', auth, async (req, res) => {
 
 const upload = multer({
     limits: {
-        fileSize: 1000000
+        fileSize: 1000000,
     },
     fileFilter(req, file, cb) {
         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
@@ -94,16 +99,25 @@ const upload = multer({
         }
 
         cb(undefined, true)
-    }
+    },
 })
 
-router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
-    req.user.avatar = await sharp(req.file.buffer).resize({ width: 250, height: 250 }).png().toBuffer()
-    await req.user.save()
-    res.send()
-}, (error, req, res, next) => {
-    res.status(400).send({ error: error.message })
-})
+router.post(
+    '/users/me/avatar',
+    auth,
+    upload.single('avatar'),
+    async (req, res) => {
+        req.user.avatar = await sharp(req.file.buffer)
+            .resize({ width: 250, height: 250 })
+            .png()
+            .toBuffer()
+        await req.user.save()
+        res.send()
+    },
+    (error, req, res, next) => {
+        res.status(400).send({ error: error.message })
+    }
+)
 
 router.delete('/users/me/avatar', auth, async (req, res) => {
     req.user.avatar = undefined
